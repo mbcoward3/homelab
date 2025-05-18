@@ -1,8 +1,0 @@
-apiVersion: source.toolkit.fluxcd.io/v1beta2 # or v1
-kind: HelmRepository
-metadata:
-  name: tandoor-recipes
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: https://pascaliske.github.io/helm-charts
