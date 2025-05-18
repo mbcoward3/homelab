@@ -1,0 +1,132 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1 # or v2
+kind: HelmRelease
+metadata:
+  name: tandoor-recipes
+  namespace: tandoor # Deploy into the 'tandoor' namespace
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: tandoor
+      sourceRef:
+        kind: HelmRepository
+        name: tandoor-recipes
+        namespace: flux-system
+      version: "1.10.0" # Check for the latest chart version on https://github.com/pascaliske/helm-charts/tree/main/charts/tandoor
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # -- General application configuration
+    application:
+      # -- Set the applications secret key for cookies & password hashing
+      # Generate a strong secret key, e.g., openssl rand -hex 32
+      secretKey: "YOUR_VERY_STRONG_AND_RANDOM_SECRET_KEY"
+      # -- Set the applications timezone
+      timeZone: "America/Chicago" # Change to your timezone
+      # -- Enable or disable debug mode
+      debug: false
+      # -- Configure your space separated list of allowed hosts
+      allowedHosts: "tandoor.matthewcoward.com" # Change to your desired hostname
+
+    # -- Gunicorn worker configuration
+    gunicorn:
+      # -- Number of gunicorn workers
+      workers: 2
+      # -- Gunicorn worker timeout
+      timeout: 120
+
+    # -- Ingress configuration
+    ingress:
+      # -- Enable or disable the ingress resource
+      enabled: true
+      # -- Ingress controller class name
+      className: "nginx" # Matches the class of your Nginx Ingress Controller
+      # -- Ingress annotations
+      annotations:
+        # kubernetes.io/tls-acme: "true" # Uncomment if you have cert-manager for Let's Encrypt
+        nginx.ingress.kubernetes.io/proxy-body-size: "50m" # Allow larger uploads for images
+      # -- Ingress hostname
+      hosts:
+        - host: "tandoor.matthewcoward.com" # Change to your desired hostname
+          paths:
+            - path: /
+              pathType: Prefix
+      # -- Ingress TLS configuration
+      # tls:
+      #   - secretName: tandoor-tls # Name of the secret containing TLS cert and key
+      #     hosts:
+      #       - tandoor.yourdomain.com
+
+    # -- Persistence configuration
+    persistence:
+      # -- Enable or disable persistence
+      enabled: true
+      # -- Storage class name
+      # storageClassName: "local-path" # Explicitly set if needed, or rely on default
+      # -- Access mode
+      accessMode: ReadWriteOnce
+      # -- Storage size
+      size: 10Gi # Adjust as needed for recipes and media files
+      # -- Existing claim name
+      # existingClaim: ""
+
+    # -- Internal database configuration (PostgreSQL)
+    postgresql:
+      # -- Enable or disable the internal database
+      enabled: true # This will deploy a PostgreSQL instance for Tandoor
+      # -- PostgreSQL authentication configuration (passwords will be auto-generated if not set)
+      auth:
+        # username: "tandoor"
+        # password: "YOUR_POSTGRES_PASSWORD" # Let it auto-generate or provide one
+        # database: "tandoor"
+        # -- Existing secret containing PostgreSQL credentials
+        # existingSecret: ""
+        # -- Key names in the existing secret for username, password, and postgres-password
+        # secretKeys:
+        #   userPasswordKey: user-password
+        #   adminPasswordKey: admin-password
+      # -- PostgreSQL persistence configuration
+      primary:
+        persistence:
+          enabled: true
+          # storageClassName: "local-path" # Or your preferred StorageClass
+          size: 5Gi # Adjust as needed
+
+    # -- External database configuration
+    # externalDatabase:
+    #   # -- Enable or disable the external database
+    #   enabled: false
+    #   # -- External database type
+    #   type: postgresql
+    #   # -- External database host
+    #   host: ""
+    #   # -- External database port
+    #   port: 5432
+    #   # -- External database username
+    #   user: ""
+    #   # -- External database password
+    #   password: ""
+    #   # -- External database name
+    #   database: ""
+    #   # -- External database ssl mode
+    #   sslmode: prefer
+    #   # -- Existing secret containing external database credentials
+    #   # existingSecret: ""
+
+    # -- Configure resource requests and limits
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+    # If you need to use specific node selectors or tolerations:
+    # nodeSelector: {}
+    # tolerations: []
+    # affinity: {}
