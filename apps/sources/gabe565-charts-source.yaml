@@ -1,0 +1,8 @@
+apiVersion: source.toolkit.fluxcd.io/v1 # Or v1beta2 depending on your Flux version
+kind: HelmRepository
+metadata:
+  name: gabe565-charts
+  namespace: flux-system # Or your Flux namespace
+spec:
+  interval: 1h # How often to fetch new chart versions
+  url: https://charts.gabe565.com # This is the repository URL for gabe565 charts
